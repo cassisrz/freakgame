@@ -1,3 +1,5 @@
+import { RoundResult } from "../../../types/games/timeguessr";
+
 export function startGameTimer(): number {
     return Date.now();
 }
@@ -22,5 +24,32 @@ export function calculateSingleScore(realTime: number, guess: number): number {
     } else {
         return 0;
     }
+}
 
+export function calculateMultiplayerScores(realTime: number, guesses: { playerName: string, guess: number }[]): RoundResult[] {
+    // Cálculo de la diferencia de cada jugador
+    const results = guesses.map(({ playerName, guess }) => ({
+        playerName,
+        guess,
+        difference: Math.abs(realTime - guess),
+        pointsEarned: 0
+    }))
+
+    // Se busca si alguno acierta el tiempo exacto
+    const exactGuess = results.find(result => result.difference < 0.01);
+
+    if (exactGuess) {
+        // Si hay un acierto exacto, ese jugador gana 2 puntos y el resto 0
+        return results.map(result => ({
+            ...result,
+            pointsEarned: result.playerName === exactGuess.playerName ? 2 : 0
+        }));
+    } else {
+        // Si no hay aciertos exactos, se busca el jugador con la menor diferencia
+        const minDifference = Math.min(...results.map(result => result.difference));
+        return results.map(result => ({
+            ...result,
+            pointsEarned: result.difference === minDifference ? 1 : 0
+        }));
+    }
 }
